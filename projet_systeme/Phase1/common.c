@@ -1,5 +1,12 @@
 #include "common_impl.h"
-
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include<stdlib.h>
+#include<assert.h>
+#include<unistd.h>
+#include<string.h>
 int creer_socket(int prop, int *port_num)
 {
    int fd = 0;
@@ -18,14 +25,7 @@ int creer_socket(int prop, int *port_num)
 /* de declarer le prototype de ces nouvelles */
 /* fonctions dans common_impl.h */
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include<stdlib.h>
-#include<assert.h>
-#include<unistd.h>
-#include<string.h>
+
 
 int compte_lignes(FILE *fichier){
   rewind(fichier);

@@ -26,27 +26,29 @@ void sigchld_handler(int sig)
 
 int main(int argc, char *argv[])
 {
+
   if (argc < 3){
     usage();
-  } else {
+  }
+
+  else {
      pid_t pid;
      int num_procs = 0;
      int i;
      FILE *fichier=NULL;
      fichier= fopen(argv[1],"r");
 
+
      /* Mise en place d'un traitant pour recuperer les fils zombies*/
      /* XXX.sa_handler = sigchld_handler; */
 
      /* lecture du fichier de machines */
-
-     int nb_processus= compte_lignes(fichier);
+     num_procs= compte_lignes(fichier);
      /* 1- on recupere le nombre de processus a lancer */
-
-     fprintf(stdout, "%d\n",nb_processus );
+     printf("%d\n",num_procs );
      /* 2- on recupere les noms des machines : le nom de */
      /* la machine est un des elements d'identification */
-
+     char *machines [num_procs][50];
 
      /* creation de la socket d'ecoute */
      /* + ecoute effective */
@@ -54,28 +56,28 @@ int main(int argc, char *argv[])
      /* creation des fils */
      for(i = 0; i < num_procs ; i++) {
 
-	/* creation du tube pour rediriger stdout */
+       /* creation du tube pour rediriger stdout */
 
-	/* creation du tube pour rediriger stderr */
+       /* creation du tube pour rediriger stderr */
 
-	pid = fork();
-	if(pid == -1) ERROR_EXIT("fork");
+       pid = fork();
+       if(pid == -1) ERROR_EXIT("fork");
 
-	if (pid == 0) { /* fils */
+       if (pid == 0) { /* fils */
 
-	   /* redirection stdout */
+         /* redirection stdout */
 
-	   /* redirection stderr */
+         /* redirection stderr */
 
-	   /* Creation du tableau d'arguments pour le ssh */
+         /* Creation du tableau d'arguments pour le ssh */
 
-	   /* jump to new prog : */
-	   /* execvp("ssh",newargv); */
+         /* jump to new prog : */
+         /* execvp("ssh",newargv); */
 
-	} else  if(pid > 0) { /* pere */
-	   /* fermeture des extremites des tubes non utiles */
-	   num_procs_creat++;
-	}
+       } else  if(pid > 0) { /* pere */
+         /* fermeture des extremites des tubes non utiles */
+         num_procs_creat++;
+       }
      }
 
 
