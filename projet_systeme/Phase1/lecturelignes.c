@@ -18,7 +18,7 @@ int compte_lignes(FILE *fichier){
       n_ligne=n_ligne+1;
     }
   }
-  return n_ligne;
+  return n_ligne; 
 }
 
 void tableau_mot(FILE *fichier, int n_ligne){

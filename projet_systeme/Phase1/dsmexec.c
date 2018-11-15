@@ -1,9 +1,18 @@
 #include "common_impl.h"
 
+
+
+
 /* variables globales */
 
-/* un tableau gerant les infos d'identification */
+/* un tableau gérant les infos d'identification */
 
+typedef struct info{
+  char name[20];
+  char IP[20];
+  char date[20];
+  int num_sock;
+}info;
 /* des processus dsm */
 dsm_proc_t *proc_array = NULL;
 
@@ -21,6 +30,8 @@ void sigchld_handler(int sig)
 {
    /* on traite les fils qui se terminent */
    /* pour eviter les zombies */
+   waitpid(-1, NULL, WHOHANG);
+   num_procs_creat--;
 }
 
 
@@ -30,7 +41,7 @@ int main(int argc, char *argv[])
     usage();
   } else {
      pid_t pid;
-     int num_procs = 0;
+     int num_procs = 0; //nombre de machines à utiliser
      int i;
      FILE *fichier=NULL;
      fichier= fopen(argv[1],"r");
@@ -39,10 +50,9 @@ int main(int argc, char *argv[])
      /* XXX.sa_handler = sigchld_handler; */
 
      /* lecture du fichier de machines */
-
-     int nb_processus= compte_lignes(fichier);
+     fichier= fopen(argv[1],"r");
      /* 1- on recupere le nombre de processus a lancer */
-
+     int nb_processus= compte_lignes(fichier);
      fprintf(stdout, "%d\n",nb_processus );
      /* 2- on recupere les noms des machines : le nom de */
      /* la machine est un des elements d'identification */
@@ -55,8 +65,11 @@ int main(int argc, char *argv[])
      for(i = 0; i < num_procs ; i++) {
 
 	/* creation du tube pour rediriger stdout */
-
+  int pipeout[2];
+  pipe(pipeout);
 	/* creation du tube pour rediriger stderr */
+  int pipeerr[2];
+  pipe(pipeerr);
 
 	pid = fork();
 	if(pid == -1) ERROR_EXIT("fork");
@@ -64,9 +77,11 @@ int main(int argc, char *argv[])
 	if (pid == 0) { /* fils */
 
 	   /* redirection stdout */
-
+     close(pipeout[0]);
+     dup2(pipeout[1], STDOUT_FILENO);//pas indispensable
 	   /* redirection stderr */
-
+     close(pipeerr[0]);
+     dup2(pipeerr[1], STDOUT_FILENO);//pas indispensable
 	   /* Creation du tableau d'arguments pour le ssh */
 
 	   /* jump to new prog : */

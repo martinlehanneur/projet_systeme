@@ -1,9 +1,97 @@
 #include "common_impl.h"
+#include <poll.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/types.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#define SA struct sockaddr
+#define SAI struct sockaddr_in
+#define LEN 256
+#define N 2
+
+void error(const char *msg)
+{
+  perror(msg);
+  exit(1);
+}
+
+
+int do_bind(int sock, const SAI sin, int adrlen)
+{
+  int b= bind(sock,(SA *) &sin, sizeof(sin));
+  if (b == -1){
+    error("bind");
+  }
+  return b;
+}
+
+int do_accept(int sock, SAI* sin_client, int adrlen)
+{
+  socklen_t addrsize = sizeof(sin_client);
+  int a= accept(sock,(SA *) sin_client, &addrsize);
+  if (a == -1){
+    error("Error accept");
+  }
+  return a;
+}
+
+
+int do_read(int sock, char* buf,int len)
+{
+  int r=read(sock,buf,len);
+  if (r == -1){
+    error("Error read");
+  }
+  return r;
+}
+
+ssize_t do_write(int fd, const void *buf, size_t count)
+{
+  ssize_t w= write(fd,buf,count);
+  if (w == -1){
+    error("Error write");
+  }
+  return w;
+}
 
 int creer_socket(int prop, int *port_num)
 {
    int fd = 0;
+   SAI saddr_in;
+   //clean the serv_add structure
+   memset( &saddr_in,0,sizeof(saddr_in) );
+   //internet family protocol
+   saddr_in.sin_family = AF_INET;
+   //we bind to any ip form the host
+   saddr_in.sin_addr.s_addr = htonl(INADDR_ANY);
+   //we bind on the tcp port specified
+   *port_num = ntohs(saddr_in.sin_port);
+   //create the socket, check for validity!
+   int sock = socket(AF_INET, SOCK_STREAM, 0);
 
+   if (sock == -1)
+   {
+     error("ERROR: socket unbound.");
+     exit(EXIT_FAILURE);
+   }
+
+   if (-1 == bind(fd, (struct sockaddr *)&sin, sizeof(sin))){
+   perror("bind");
+   exit(EXIT_FAILURE);
+ }
+   socklen_t len;
+   len = sizeof(struct sockaddr*);
+   if(getsockname(fd, (struct sockaddr*)(&serv_addr), &len) == -1){
+     perror("error with getsockname");
+   }
+   struct pollfd fds[N];
+   memset(fds, 0, N*sizeof(struct pollfd));
+   fds[0].fd = sock;
+   fds[0].events = prop;
+   fd = fds[0].fd;
    /* fonction de creation et d'attachement */
    /* d'une nouvelle socket */
    /* renvoie le numero de descripteur */
@@ -17,15 +105,6 @@ int creer_socket(int prop, int *port_num)
 /* et le processus intermediaire. N'oubliez pas */
 /* de declarer le prototype de ces nouvelles */
 /* fonctions dans common_impl.h */
-
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include<stdlib.h>
-#include<assert.h>
-#include<unistd.h>
-#include<string.h>
 
 int compte_lignes(FILE *fichier){
   rewind(fichier);
