@@ -21,9 +21,12 @@ void sigchld_handler(int sig)
 {
   /* on traite les fils qui se terminent */
   /* pour eviter les zombies */
+  waitpid(-1,NULL,WNOHANG);
+  num_procs_creat--;
+
 }
 typedef struct info_des_machine { // stocke les infos des differentes machines
-  char nom[256];
+  char nom_machine[256];
   char pid[6];
   char port[6];
   int rang;
