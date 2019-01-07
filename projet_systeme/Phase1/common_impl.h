@@ -30,5 +30,5 @@ typedef struct dsm_proc dsm_proc_t;
 
 int creer_socket(int type, int *port_num);
 
-void tableau_mot(FILE *fichier, int n_ligne);
 int compte_lignes(FILE *fichier);
+void tableau_mot(FILE *fichier, int n_ligne);

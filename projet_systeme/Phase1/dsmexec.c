@@ -28,18 +28,34 @@ void usage(void)
 
 void sigchld_handler(int sig)
 {
+<<<<<<< HEAD
    /* on traite les fils qui se terminent */
    /* pour eviter les zombies */
    waitpid(-1, NULL, WHOHANG);
    num_procs_creat--;
 }
+=======
+  /* on traite les fils qui se terminent */
+  /* pour eviter les zombies */
+  waitpid(-1,NULL,WNOHANG);
+  num_procs_creat--;
+>>>>>>> f0b572998a581b2ea9934e49f65b96cd494ff210
 
+}
+typedef struct info_des_machine { // stocke les infos des differentes machines
+  char nom_machine[256];
+  char pid[6];
+  char port[6];
+  int rang;
+}info_des_machine;
 
 int main(int argc, char *argv[])
 {
+
   if (argc < 3){
     usage();
   }
+<<<<<<< HEAD
   else {
      pid_t pid;
      int num_procs = 0; //nombre de machines à utiliser
@@ -57,26 +73,56 @@ int main(int argc, char *argv[])
      fprintf(stdout, "%d\n",nb_processus );
      /* 2- on recupere les noms des machines : le nom de */
      /* la machine est un des elements d'identification */
+=======
+
+  else {
+    pid_t pid;
+    int num_procs = 0;
+    int i;
+    FILE *fichier=NULL;
+    fichier= fopen(argv[1],"r");
+    //pipe_t * pipe_stderr=NULL;
+    //pipe_t * pipe_stdout=NULL;
+>>>>>>> f0b572998a581b2ea9934e49f65b96cd494ff210
+
+    /* Mise en place d'un traitant pour recuperer les fils zombies*/
+    /* XXX.sa_handler = sigchld_handler; */
+
+    /* lecture du fichier de machines */
+    num_procs= compte_lignes(fichier);
+    /* 1- on recupere le nombre de processus a lancer */
+    printf("%d\n",num_procs );
+    /* 2- on recupere les noms des machines : le nom de */
+    /* la machine est un des elements d'identification */
+    tableau_mot(fichier,num_procs);
 
 
-     /* creation de la socket d'ecoute */
-     /* + ecoute effective */
-
-     /* creation des fils */
-     for(i = 0; i < num_procs ; i++) {
-
+<<<<<<< HEAD
 	/* creation du tube pour rediriger stdout */
   int pipeout[2];
   pipe(pipeout);
 	/* creation du tube pour rediriger stderr */
   int pipeerr[2];
   pipe(pipeerr);
+=======
+    /* creation de la socket d'ecoute */
+    /* + ecoute effective */
 
-	pid = fork();
-	if(pid == -1) ERROR_EXIT("fork");
+    /* creation des fils */
+    for(i = 0; i < num_procs ; i++) {
+>>>>>>> f0b572998a581b2ea9934e49f65b96cd494ff210
 
-	if (pid == 0) { /* fils */
+      /* creation du tube pour rediriger stdout */
+      int pipe_stdout[2];
+      pipe(pipe_stdout);
+      /* creation du tube pour rediriger stderr */
+      int pipe_stderr[2];
+      pipe(pipe_stderr);
 
+      /* creation des fils */
+      pid = fork();
+
+<<<<<<< HEAD
 	   /* redirection stdout */
      close(pipeout[0]);
      dup2(pipeout[1], STDOUT_FILENO);//pas indispensable
@@ -84,53 +130,70 @@ int main(int argc, char *argv[])
      close(pipeerr[0]);
      dup2(pipeerr[1], STDOUT_FILENO);//pas indispensable
 	   /* Creation du tableau d'arguments pour le ssh */
+=======
+      if(pid == -1) {
+        ERROR_EXIT("problème de fork");
+      }
 
-	   /* jump to new prog : */
-	   /* execvp("ssh",newargv); */
+      if (pid == 0) { /* fils */
 
-	} else  if(pid > 0) { /* pere */
-	   /* fermeture des extremites des tubes non utiles */
-	   num_procs_creat++;
-	}
-     }
+        /* redirection stdout */
+        close(pipe_stdout[0]);
+        dup2(pipe_stdout[1],STDOUT_FILENO);
+        /* redirection stderr */
+        close(pipe_stderr[0]);
+        dup2(pipe_stderr[1],STDOUT_FILENO);
+        /* Creation du tableau d'arguments pour le ssh */
+>>>>>>> f0b572998a581b2ea9934e49f65b96cd494ff210
+
+        /* jump to new prog : */
+        /* execvp("ssh",newargv); */
+
+      } else  if(pid > 0) { /* pere */
+        /* fermeture des extremites des tubes non utiles */
+        close(pipe_stdout[1]);
+        close(pipe_stderr[1]);
+        num_procs_creat++;
+      }
+    }
 
 
-     for(i = 0; i < num_procs ; i++){
+    for(i = 0; i < num_procs ; i++){
 
-	/* on accepte les connexions des processus dsm */
+      /* on accepte les connexions des processus dsm */
 
-	/*  On recupere le nom de la machine distante */
-	/* 1- d'abord la taille de la chaine */
-	/* 2- puis la chaine elle-meme */
+      /*  On recupere le nom de la machine distante */
+      /* 1- d'abord la taille de la chaine */
+      /* 2- puis la chaine elle-meme */
 
-	/* On recupere le pid du processus distant  */
+      /* On recupere le pid du processus distant  */
 
-	/* On recupere le numero de port de la socket */
-	/* d'ecoute des processus distants */
-     }
+      /* On recupere le numero de port de la socket */
+      /* d'ecoute des processus distants */
+    }
 
-     /* envoi du nombre de processus aux processus dsm*/
+    /* envoi du nombre de processus aux processus dsm*/
 
-     /* envoi des rangs aux processus dsm */
+    /* envoi des rangs aux processus dsm */
 
-     /* envoi des infos de connexion aux processus */
+    /* envoi des infos de connexion aux processus */
 
-     /* gestion des E/S : on recupere les caracteres */
-     /* sur les tubes de redirection de stdout/stderr */
-     /* while(1)
-         {
-            je recupere les infos sur les tubes de redirection
-            jusqu'à ce qu'ils soient inactifs (ie fermes par les
-            processus dsm ecrivains de l'autre cote ...)
+    /* gestion des E/S : on recupere les caracteres */
+    /* sur les tubes de redirection de stdout/stderr */
+    /* while(1)
+    {
+    je recupere les infos sur les tubes de redirection
+    jusqu'à ce qu'ils soient inactifs (ie fermes par les
+    processus dsm ecrivains de l'autre cote ...)
 
-         };
-      */
+  };
+  */
 
-     /* on attend les processus fils */
+  /* on attend les processus fils */
 
-     /* on ferme les descripteurs proprement */
+  /* on ferme les descripteurs proprement */
 
-     /* on ferme la socket d'ecoute */
-  }
-   exit(EXIT_SUCCESS);
+  /* on ferme la socket d'ecoute */
+}
+exit(EXIT_SUCCESS);
 }

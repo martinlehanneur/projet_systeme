@@ -59,6 +59,7 @@ ssize_t do_write(int fd, const void *buf, size_t count)
 
 int creer_socket(int prop, int *port_num)
 {
+<<<<<<< HEAD
   int fd = 0;
   SAI saddr_in;
   //clean the serv_add structure
@@ -92,6 +93,45 @@ int creer_socket(int prop, int *port_num)
   /* d'une nouvelle socket */
   /* renvoie le numero de descripteur */
   /* et modifie le parametre port_num */
+=======
+   int fd = 0;
+   SAI saddr_in;
+   //clean the serv_add structure
+   memset( &saddr_in,0,sizeof(saddr_in) );
+   //internet family protocol
+   saddr_in.sin_family = AF_INET;
+   //we bind to any ip form the host
+   saddr_in.sin_addr.s_addr = htonl(INADDR_ANY);
+   //we bind on the tcp port specified
+   *port_num = ntohs(saddr_in.sin_port);
+   //create the socket, check for validity!
+   int sock = socket(AF_INET, SOCK_STREAM, 0);
+
+   if (sock == -1)
+   {
+     error("ERROR: socket unbound.");
+     exit(EXIT_FAILURE);
+   }
+
+   if (-1 == bind(fd, (struct sockaddr *)&sin, sizeof(sin))){
+   perror("bind");
+   exit(EXIT_FAILURE);
+ }
+   socklen_t len;
+   len = sizeof(struct sockaddr*);
+   if(getsockname(fd, (struct sockaddr*)(&serv_addr), &len) == -1){
+     perror("error with getsockname");
+   }
+   struct pollfd fds[N];
+   memset(fds, 0, N*sizeof(struct pollfd));
+   fds[0].fd = sock;
+   fds[0].events = prop;
+   fd = fds[0].fd;
+   /* fonction de creation et d'attachement */
+   /* d'une nouvelle socket */
+   /* renvoie le numero de descripteur */
+   /* et modifie le parametre port_num */
+>>>>>>> f0b572998a581b2ea9934e49f65b96cd494ff210
 
   return fd;
 }
