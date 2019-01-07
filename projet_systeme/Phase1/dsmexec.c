@@ -22,7 +22,7 @@ void sigchld_handler(int sig)
   /* on traite les fils qui se terminent */
   /* pour eviter les zombies */
   waitpid(-1,NULL,WNOHANG);
-  num_procs_creat--;
+  num_procs_creat=num_procs_creat-1;
 
 }
 typedef struct info_des_machine { // stocke les infos des differentes machines
@@ -40,11 +40,16 @@ int main(int argc, char *argv[])
   }
 
   else {
-    pid_t pid;
-    int num_procs = 0;
+
+    //initialisation de toutes les variables
+
+
+
+    pid_t pid;  //pid du processus
+    int num_procs = 0; //nb de machines à utiliser = nb de lignes dans machine_file
     int i;
     FILE *fichier=NULL;
-    fichier= fopen(argv[1],"r");
+    fichier= fopen(argv[1],"r"); //ouverture de machine_file
     //pipe_t * pipe_stderr=NULL;
     //pipe_t * pipe_stdout=NULL;
 
