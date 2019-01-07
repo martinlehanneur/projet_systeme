@@ -39,7 +39,8 @@ int main(int argc, char *argv[])
 {
   if (argc < 3){
     usage();
-  } else {
+  }
+  else {
      pid_t pid;
      int num_procs = 0; //nombre de machines à utiliser
      int i;
@@ -50,7 +51,7 @@ int main(int argc, char *argv[])
      /* XXX.sa_handler = sigchld_handler; */
 
      /* lecture du fichier de machines */
-     fichier= fopen(argv[1],"r");
+     fichier = fopen(argv[1],"r");
      /* 1- on recupere le nombre de processus a lancer */
      int nb_processus= compte_lignes(fichier);
      fprintf(stdout, "%d\n",nb_processus );
