@@ -28,10 +28,18 @@ void usage(void)
 
 void sigchld_handler(int sig)
 {
+<<<<<<< HEAD
    /* on traite les fils qui se terminent */
    /* pour eviter les zombies */
    waitpid(-1, NULL, WNOHANG);
    num_procs_creat--;
+=======
+  /* on traite les fils qui se terminent */
+  /* pour eviter les zombies */
+  waitpid(-1,NULL,WNOHANG);
+  num_procs_creat=num_procs_creat-1;
+
+>>>>>>> e70da0437fbf772b39a7470c2f25c0035a38a138
 }
 
 
@@ -41,11 +49,29 @@ int main(int argc, char *argv[])
     usage();
   }
   else {
+<<<<<<< HEAD
      pid_t pid;
      int num_procs = 0; //nombre de machines à utiliser
      int i;
      FILE *fichier=NULL;
      fichier= fopen(argv[1],"r");
+=======
+
+    //initialisation de toutes les variables
+
+
+
+    pid_t pid;  //pid du processus
+    int num_procs = 0; //nb de machines à utiliser = nb de lignes dans machine_file
+    int i;
+    FILE *fichier=NULL;
+    fichier= fopen(argv[1],"r"); //ouverture de machine_file
+    //pipe_t * pipe_stderr=NULL;
+    //pipe_t * pipe_stdout=NULL;
+
+    /* Mise en place d'un traitant pour recuperer les fils zombies*/
+    /* XXX.sa_handler = sigchld_handler; */
+>>>>>>> e70da0437fbf772b39a7470c2f25c0035a38a138
 
      /* Mise en place d'un traitant pour recuperer les fils zombies*/
      /* XXX.sa_handler = sigchld_handler; */
