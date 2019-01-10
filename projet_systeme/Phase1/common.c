@@ -19,9 +19,9 @@ void error(const char *msg)
 }
 
 
-int do_bind(int sock, const SAI sin, int adrlen)
+int do_bind(int sock, SAI s_in, int addrlen)
 {
-  int b= bind(sock,(SA *) &sin, sizeof(sin));
+  int b= bind(sock,(SA *) &s_in, sizeof(s_in));
   if (b == -1){
     error("bind");
   }
@@ -78,11 +78,12 @@ int creer_socket(int prop, int *port_num)
     error("ERROR: socket unbound.");
     exit(EXIT_FAILURE);
   }
+  do_bind(fd, saddr_in , len);
+  // if (-1 == bind(fd, (struct sockaddr *)&s_in, sizeof(s_in))){
+  //   perror("bind");
+  //   exit(EXIT_FAILURE);
+  // }
 
-  if (-1 == bind(fd, (struct sockaddr *)&sin, sizeof(sin))){
-    perror("bind");
-    exit(EXIT_FAILURE);
-  }
   *port_num = ntohs(saddr_in.sin_port);
 
   if(getsockname(fd, (struct sockaddr*)(&saddr_in), &len) == -1){
@@ -118,12 +119,12 @@ int compte_lignes(FILE *fichier){
   return n_ligne;
 }
 
-char ** tableau_mot(FILE *fichier, int n_ligne){
+char * tableau_mot(FILE *fichier, int n_ligne){
   rewind(fichier);
   int i;
   int taille_max=50;
   char chaine[taille_max];
-  // char tableau[n_ligne][taille_max];
+  char * tableau[n_ligne];
   for(i=0;i<n_ligne;i++){
     tableau[i] = malloc(sizeof(char)*taille_max);
     bzero(tableau[i],sizeof(char)*taille_max);
