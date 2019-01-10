@@ -67,9 +67,11 @@ int creer_socket(int prop, int *port_num)
   //we bind to any ip form the host
   saddr_in.sin_addr.s_addr = htonl(INADDR_ANY);
   //we bind on the tcp port specified
-  *port_num = ntohs(saddr_in.sin_port);
+  saddr_in.sin_port = htons(0);
   //create the socket, check for validity!
   int fd = socket(AF_INET, SOCK_STREAM, 0);
+  socklen_t len = sizeof(SA*); //struct sockaddr size
+
 
   if (fd == -1)
   {
@@ -81,7 +83,7 @@ int creer_socket(int prop, int *port_num)
     perror("bind");
     exit(EXIT_FAILURE);
   }
-  socklen_t len = sizeof(SA*); //struct sockaddr
+  *port_num = ntohs(saddr_in.sin_port);
 
   if(getsockname(fd, (struct sockaddr*)(&saddr_in), &len) == -1){
     perror("error with getsockname");
@@ -116,39 +118,18 @@ int compte_lignes(FILE *fichier){
   return n_ligne;
 }
 
-void tableau_mot(FILE *fichier, int n_ligne){
+char ** tableau_mot(FILE *fichier, int n_ligne){
   rewind(fichier);
   int i;
-  int taille_max=500;
+  int taille_max=50;
   char chaine[taille_max];
-  char tableau[n_ligne][taille_max];
+  // char tableau[n_ligne][taille_max];
   for(i=0;i<n_ligne;i++){
+    tableau[i] = malloc(sizeof(char)*taille_max);
+    bzero(tableau[i],sizeof(char)*taille_max);
     fgets(chaine, taille_max, fichier);
     strcpy(tableau[i], chaine);
-    printf("%s\n",tableau[i]);
   }
   fclose(fichier);
+  return tableau;
 }
-
-// int main(int argc, char **argv)
-// {
-//   if(argc<2){
-//     printf("Il manque un nom de fichier texte en argument.\n");
-//   }
-//
-//   else {
-//     FILE *fichier=NULL;
-//     fichier= fopen(argv[1],"r");
-//     if(fichier==NULL){
-//       printf("Le fichier spécifié en argument n'existe pas.\n");
-//     }
-//     else{
-//       int n_lignes=compte_lignes(fichier);
-//       printf("Le fichier a %u lignes\n",n_lignes);
-//       tableau_mot(fichier,n_lignes);
-//       /*fclose(fichier);*/
-//     }
-//   }
-//
-//    return 0;
-// }

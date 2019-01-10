@@ -1,5 +1,11 @@
 #include "common_impl.h"
 
+#define SA struct sockaddr
+#define IA struct in_addr
+#define SAI struct sockaddr_in
+#define HE struct hostent
+#define INFO struct info
+
 
 
 
@@ -7,12 +13,12 @@
 
 /* un tableau gérant les infos d'identification */
 
-typedef struct info{
+struct info{
   char name[20];
-  char IP[20];
-  char date[20];
-  int num_sock;
-}info;
+  char PID[6];
+  char port[6];
+  int rank;
+};
 /* des processus dsm */
 dsm_proc_t *proc_array = NULL;
 
@@ -28,14 +34,10 @@ void usage(void)
 
 void sigchld_handler(int sig)
 {
-  /* on traite les fils qui se terminent */
-  /* pour eviter les zombies */
   waitpid(-1, NULL, WNOHANG);
   num_procs_creat--;
   /* on traite les fils qui se terminent */
   /* pour eviter les zombies */
-  waitpid(-1,NULL,WNOHANG);
-  num_procs_creat=num_procs_creat-1;
 
 }
 
@@ -55,30 +57,40 @@ int main(int argc, char *argv[])
     int num_procs = 0; //nb de machines à utiliser = nb de lignes dans machine_file
     int i;
     FILE *fichier=NULL;
-    fichier= fopen(argv[1],"r"); //ouverture de machine_file
-    //pipe_t * pipe_stderr=NULL;
-    //pipe_t * pipe_stdout=NULL;
+    int listen; //socket d'écoute
+    int numport; //numéro du port de la socket d'écoute
+    int name_len_max = 64; //taille maximale du nom de la machine
+    char machine_name[name_length_hmax];
+    int sizemachname;
+    int len_port = 6;
+    int len_pid = 6;
+    int sockaccept = -1; //détermine si la socket est acceptée
+    SAI s_in; //
 
-    /* Mise en place d'un traitant pour recuperer les fils zombies*/
-    /* XXX.sa_handler = sigchld_handler; */
+    pipe_t * pipe_stderr=NULL;
+    pipe_t * pipe_stdout=NULL;
 
-    /* Mise en place d'un traitant pour recuperer les fils zombies*/
-    /* XXX.sa_handler = sigchld_handler; */
+    bzero(&act_chld, sizeof(struct sigaction));
+    act_chld.sa_handler = sigchld_handler;
+    sigaction(SIGCHLD, &act_chld, &act_chld); // en troisième argument, stockage de la valeur du signal, ou NULL pour ne rien stocker
 
     /* lecture du fichier de machines */
-    fichier = fopen(argv[1],"r");
+    fichier = fopen(argv[1],"r"); //ouverture de machine_file
     /* 1- on recupere le nombre de processus a lancer */
-    int nb_processus= compte_lignes(fichier);
+    int nb_processus = compte_lignes(fichier);
     fprintf(stdout, "%d\n",nb_processus );
-    /* 2- on recupere les noms des machines : le nom de */
-    /* la machine est un des elements d'identification */
+    /* 2- on récupère les noms des machines : le nom de la machine est un des elements d'identification */
+    char * tableau[] = tableau_mot(fichier, nb_processus);
 
-
-    /* creation de la socket d'ecoute */
-    /* + ecoute effective */
+    INFO processus[nb_processus]; //stockage des machines
+    INFO machine_encours;
+    /* creation de la socket d'écoute */
+    listen = creer_socket(0, &numport);
+    /* + écoute effective */
+    listen(listen, nb_processus);
 
     /* creation des fils */
-    for(i = 0; i < num_procs ; i++) {
+    for(int i = 0; i < nb_processus ; i++) {
 
       /* creation du tube pour rediriger stdout */
       int pipeout[2];
@@ -91,7 +103,8 @@ int main(int argc, char *argv[])
       if(pid == -1) ERROR_EXIT("fork");
 
       if (pid == 0) { /* fils */
-
+        HE* stock;
+        IA* addr_stock;
         /* redirection stdout */
         close(pipeout[0]);
         dup2(pipeout[1], STDOUT_FILENO);//pas indispensable
@@ -99,36 +112,65 @@ int main(int argc, char *argv[])
         close(pipeerr[0]);
         dup2(pipeerr[1], STDOUT_FILENO);//pas indispensable
         /* Creation du tableau d'arguments pour le ssh */
+        argssh[0] = 'ssh';
+        argssh[1] = tableau_mot[i];
+        argssh[2] = /*adresse du fichier à exécuter*/
+
+        gethostname(machine_name, name_leng_max);
+        stock = gethostbyname(machine_name);
+        addr_stock = (IA*) stock->h_addr_list[0];
+
+        argssh[3] = malloc(len_pid*sizeof(char));
+        sprintf(argssh[3], "%d", inet_ntoa(*addr_stock)); //adresse IP
+        argssh[4] = malloc(len_port*sizeof(char));
+        sprintf(argssh[4], "%d", numport);
+
+        // /* création de la nouvelle chaine d'argument pour le ssh */
+        // for (k = 1; k < argc - 1; k++){
+        //   argssh [4+k] = argv[k+1];
+        // }
+        // argssh[argc+k] = NULL;
 
         /* jump to new prog : */
-        /* execvp("ssh",newargv); */
+        execvp('ssh', argssh);
 
       } else  if(pid > 0) { /* pere */
-        /* fermeture des extremites des tubes non utiles */
+        /* fermeture des extrêmités des tubes non utiles */
         num_procs_creat++;
+        close(pipeout[1]);
+        close(pipederr[1]);
       }
     }
 
+    for (int j=0 ; j<num_procs ; j++){
 
-    for(i = 0; i < num_procs ; i++){
+      bzero(&machine_encours, sizeof(INFO));
+      bzero(&s_in, sizeof(SAI));
+      socklen_t size = sizeof(s_in);
 
-      /* on accepte les connexions des processus dsm */
+      while (sockaccept == -1){
+        sockaccept = do_accept(sock, (SA*)&s_in, &size);
+      }
 
-      /*  On recupere le nom de la machine distante */
-      /* 1- d'abord la taille de la chaine */
-      /* 2- puis la chaine elle-meme */
+      /* envoi du nombre de processus aux processus dsm*/
 
-      /* On recupere le pid du processus distant  */
-
-      /* On recupere le numero de port de la socket */
-      /* d'ecoute des processus distants */
-    }
-
-    /* envoi du nombre de processus aux processus dsm*/
+      do_read(sockaccept, &sizemachname, sizeof(int));
+      do_read(sockaccept, machine_encours->name, sizemachname*sizeof(char));
+      do_read(sockaccept, machine_encours->PID, len_pid*sizeof(char));
+      do_read(sockaccept, machine_encours->port, len_port*sizeof(char));
 
     /* envoi des rangs aux processus dsm */
 
+    for (int p = 0; p < nb_processus; p++){
+      if (0 == strncmp(machine_encours->name, tableau_mot[p], strlen(machine_encours->name)) {
+        machine_encours->rank = p;
+      }
+      processus[machine_encours->rank] = machine_encours;
+    }
+
     /* envoi des infos de connexion aux processus */
+    for (int p = 0; p < nb_processus; p++){
+      printf("Rank: %i | Name: %s | PID: %s | Port: %s\n", processus[p]->rank, processus[p]->name, processus[p]->PID, processus[p]->port);
 
     /* gestion des E/S : on recupere les caracteres */
     /* sur les tubes de redirection de stdout/stderr */
