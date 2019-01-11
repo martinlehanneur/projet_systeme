@@ -2,91 +2,118 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <errno.h>
+#include <string.h>
+#include <fcntl.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
+#define SAI struct sockaddr_in
+#define SA struct sockaddr
+#define IA struct in_addr
+#define HE struct hostent
 
 int main(int argc, char **argv)
 {
-   /* processus intermediaire pour "nettoyer" */
-   /* la liste des arguments qu'on va passer */
-   /* a la commande a executer vraiment */
+  /* processus intermediaire pour "nettoyer" */
+  /* la liste des arguments qu'on va passer */
+  /* a la commande a executer vraiment */
 
-   char *hostIP = argv[1];
-   char *hostport = argv[2];
-   char * finalargs[argc - 3]; // arguments finaux pour execvp
-   int name_len = 100; // taille max d'un nom, arbitraire
-   char name[name_len]; // nom de la machine
-   int i; // pour la boucle qui change les arguments
-   int fdconnect; // socket pour se connecter à l'host
-   struct sockaddr_in lanceur_sin;
-   int test_connect; // assure que le connect fonctionne
-   int taille_nom = 0; //taille effective du nom
-   pid_t pid; // pid du processus
-   int fd2; // socket pour se connecter aux autres machines
-   int port_dsm; // num de port de la socket pour se connecter aux autres machines
-   int prop_dsm = 0; // proprietes pour creation socket
+  char *hostIP = argv[1];
+  char *port_num = argv[2];
+  char * ultime[argc - 3]; // arguments finaux pour execvp
+  int lenmachmax = 100; // taille max d'un nom, arbitraire
+  char machine_name[lenmachmax]; // nom de la machine
 
 
-   for (i = 0; i< argc - 3; i++){
-     finalargs[i] = argv[3 + i];
-   }
- finalargs[argc-3] = NULL;
+  int sockcon; // socket pour se connecter à l'host
+  int socklisten; // socket d'écoute
+
+  int test_connect; // essai de connexion
+  int name_size = 0; //taille effective du nom
+  pid_t PID; // pid du processus
+  int port_dsm; // num de port de la socket pour se connecter aux autres machines
+  int prop_dsm = 0; // proprietes pour creation socket
+
+  int len_port = 6;
+  int len_pid = 6;
+
+  int i;
+  for (i = 0; i< argc - 3; i++){
+    ultime[i] = argv[3 + i];
+  }
+  ultime[argc-3] = NULL;
 
 
 
-   /* creation d'une socket pour se connecter au */
-   /* au lanceur et envoyer/recevoir les infos */
-   /* necessaires pour la phase dsm_init */
-   fdconnect=socket(AF_INET,SOCK_STREAM,0);
+  /* creation d'une socket pour se connecter au */
+  /* au lanceur et envoyer/recevoir les infos */
+  /* necessaires pour la phase dsm_init */
+  //HE* IPstock;
+  //IA* addr_stock;
+  SAI launcher;
 
-   memset(&lanceur_sin, 0, sizeof(struct sockaddr_in));
-    inet_aton(hostIP,&lanceur_sin.sin_addr);
-    lanceur_sin.sin_family = AF_INET;
-  lanceur_sin.sin_port = htons(atoi(hostport));
+  bzero(&launcher, sizeof(SAI));
+  //IPstock = gethostbyname(hostIP);
+  //addr_stock = (IA*) IPstock->h_addr_list[0];
 
-do {test_connect = connect(fdconnect, (struct sockaddr *)&lanceur_sin, sizeof(struct sockaddr_in));
-} while(test_connect == -1);
 
-/*  Envoi du nom de machine au lanceur */
-if (-1 == gethostname(name, name_len)){
-perror("gethostname");
-  exit(EXIT_FAILURE);
-}
+  inet_aton(hostIP,&launcher.sin_addr);
+  launcher.sin_family = AF_INET;
+  launcher.sin_port = htons(atoi(port_num));
+  socklen_t len = sizeof(SAI);
 
-while(name[taille_nom] != '\0'){
-  taille_nom = taille_nom + 1;
-}
 
-do_write(fdconnect, &taille_nom, sizeof(int));
+  sockcon=socket(AF_INET,SOCK_STREAM,0);
+   do{
+    test_connect = connect(sockcon, (SA *)&launcher, len);
+  }while ( test_connect == -1 );
 
-do_write(fdconnect, &name, taille_nom);
 
-/*  Envoi du pid au lanceur */
-pid = getpid();
-char pid_to_send[6];
-sprintf(pid_to_send, "%d", pid);
-do_write(fdconnect, &pid_to_send, 6*sizeof(char));
+  /*  Envoi du nom de machine au lanceur */
+  if (-1 == gethostname(machine_name, lenmachmax)){
+    perror("gethostname");
+    exit(EXIT_FAILURE);
+  }
 
-/*  Creation de la socket d'ecoute pour les */
-/* connexions avec les autres processus dsm */
+  while(machine_name[name_size] != '\0'){
+    name_size = name_size + 1;
+  }
 
-fd2 = creer_socket(prop_dsm, &port_dsm);
-if (-1 == fd2){
-  fprintf(stdout, "Error in creer_socket\n");
-  fflush(stdout);
-  exit(EXIT_FAILURE);
-}
-/* Envoi du numero de port au lanceur */
-/* pour qu'il le propage à tous les autres */
-/* processus dsm */
+  //do_write(sockcon, &name_size, sizeof(int)); convertir name_size en char
+  do_write(sockcon, &machine_name, name_size*sizeof(int));
 
-char port_to_send[6];
-sprintf(port_to_send, "%d", port_dsm);
-do_write(fdconnect, &port_to_send, 6*sizeof(char));
+  /*  Envoi du pid au lanceur */
+  PID = getpid();
+  char PIDchar[len_pid];
+  sprintf(PIDchar, "%d", PID);
+  do_write(sockcon, &PIDchar, len_pid*sizeof(char));
 
-//fflush(stdout);
-/* on execute le programme voulu */
-execvp(finalargs[0],finalargs);
+  /*  Creation de la socket d'ecoute pour les */
+  /* connexions avec les autres processus dsm */
 
-return EXIT_SUCCESS;
+  socklisten = creer_socket(prop_dsm, &port_dsm);
+
+  /* Envoi du numero de port au lanceur */
+  /* pour qu'il le propage à tous les autres */
+  /* processus dsm */
+
+  char portchar[len_port];
+  sprintf(portchar, "%d", port_dsm);
+  do_write(sockcon, &portchar, len_port*sizeof(char));
+
+  //fflush(stdout);
+  /* on execute le programme voulu */
+  execvp(ultime[0],ultime);
+
+  return EXIT_SUCCESS;
 }

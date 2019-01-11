@@ -19,19 +19,20 @@ void error(const char *msg)
 }
 
 
-int do_bind(int sock, SAI s_in, int addrlen)
+int do_bind(int sock,  SAI addr)
 {
-  int b= bind(sock,(SA *) &s_in, sizeof(s_in));
+  socklen_t addrlen = sizeof (SAI);
+  int b= bind(sock, (SA *)&addr, addrlen);
   if (b == -1){
     error("bind");
   }
   return b;
 }
 
-int do_accept(int sock, SAI* sin_client, int adrlen)
+int do_accept(int sock, SAI addr)
 {
-  socklen_t addrsize = sizeof(sin_client);
-  int a= accept(sock,(SA *) sin_client, &addrsize);
+  socklen_t addrlen = sizeof(SAI);
+  int a = accept(sock,(SA *)&addr, &addrlen);
   if (a == -1){
     error("Error accept");
   }
@@ -39,29 +40,27 @@ int do_accept(int sock, SAI* sin_client, int adrlen)
 }
 
 
-int do_read(int sock, char* buf,int len)
+void do_read(int sock, char *buf,int len)
 {
-  int r=read(sock,buf,len);
+  ssize_t r = read(sock,buf,len);
   if (r == -1){
     error("Error read");
   }
-  return r;
 }
 
-ssize_t do_write(int fd, const void *buf, size_t count)
+void do_write(int fd, char *buf, int count)
 {
-  ssize_t w= write(fd,buf,count);
+  ssize_t w = write(fd,buf,count);
   if (w == -1){
     error("Error write");
   }
-  return w;
 }
 
 int creer_socket(int prop, int *port_num)
 {
   SAI saddr_in;
   //clean the serv_add structure
-  memset( &saddr_in,0,sizeof(saddr_in) );
+  bzero(&saddr_in, sizeof(SAI));
   //internet family protocol
   saddr_in.sin_family = AF_INET;
   //we bind to any ip form the host
@@ -70,7 +69,7 @@ int creer_socket(int prop, int *port_num)
   saddr_in.sin_port = htons(0);
   //create the socket, check for validity!
   int fd = socket(AF_INET, SOCK_STREAM, 0);
-  socklen_t len = sizeof(SA*); //struct sockaddr size
+  socklen_t len = sizeof(SA);
 
 
   if (fd == -1)
@@ -78,15 +77,12 @@ int creer_socket(int prop, int *port_num)
     error("ERROR: socket unbound.");
     exit(EXIT_FAILURE);
   }
-  do_bind(fd, saddr_in , len);
-  // if (-1 == bind(fd, (struct sockaddr *)&s_in, sizeof(s_in))){
-  //   perror("bind");
-  //   exit(EXIT_FAILURE);
-  // }
+  do_bind(fd, saddr_in);
+
 
   *port_num = ntohs(saddr_in.sin_port);
 
-  if(getsockname(fd, (struct sockaddr*)(&saddr_in), &len) == -1){
+  if(getsockname(fd, (SA*)(&saddr_in), &len) == -1){
     perror("error with getsockname");
     exit(EXIT_FAILURE);
   }
@@ -119,18 +115,16 @@ int compte_lignes(FILE *fichier){
   return n_ligne;
 }
 
-char ** tableau_mot(FILE *fichier, int n_ligne){
+void tableau_mot(FILE *fichier, int n_ligne, char **tableau){
   rewind(fichier);
   int i;
   int taille_max=50;
   char chaine[taille_max];
-  char * tableau[n_ligne];
   for(i=0;i<n_ligne;i++){
-    //tableau[i] = malloc(sizeof(char)*taille_max);
+    tableau[i] = malloc(sizeof(char)*taille_max);
     bzero(tableau[i],sizeof(char)*taille_max);
     fgets(chaine, taille_max, fichier);
     strcpy(tableau[i], chaine);
   }
   fclose(fichier);
-  return tableau;
 }
