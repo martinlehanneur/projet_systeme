@@ -124,7 +124,9 @@ void tableau_mot(FILE *fichier, int n_ligne, char **tableau){
     tableau[i] = malloc(sizeof(char)*taille_max);
     bzero(tableau[i],sizeof(char)*taille_max);
     fgets(chaine, taille_max, fichier);
+    fprintf(stdout, "=============%i\n", strlen(chaine));
     strcpy(tableau[i], chaine);
+    tableau[i][strlen(chaine) - 1] = '\0';
   }
   fclose(fichier);
 }

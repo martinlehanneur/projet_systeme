@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
       int pipeerr[2];
       pipe(pipeerr);
 
-      pid = fork();
+      pid = fork(); //création du fils
       if(pid == -1) ERROR_EXIT("fork");
 
       if (pid == 0) { /* fils */
@@ -140,10 +140,11 @@ int main(int argc, char *argv[])
         argssh[1] = tableau_noms[i];
         argssh[2] = "~/Documents/2A/projet_systeme/projet_systeme/Phase1/dsmwrap";
 
+        memset(machine_name, 0, name_len_max);
         gethostname(machine_name, name_len_max);
         stock = gethostbyname(machine_name);
-        addr_stock = (IA*) stock->h_addr_list[0];
 
+        addr_stock = (IA*) stock->h_addr_list[0];
 
         argssh[3] = inet_ntoa(*addr_stock); //adresse IP
         argssh[4] = malloc(len_port*sizeof(char));
@@ -158,7 +159,8 @@ int main(int argc, char *argv[])
 
         /* jump to new prog : */
         execvp("ssh", argssh);
-
+        printf("%s", argssh[3]);
+        fflush(stdout);
       } else  if(pid > 0) { /* pere */
         /* fermeture des extrêmités des tubes non utiles */
         num_procs_creat++;
